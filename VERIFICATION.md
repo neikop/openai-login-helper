@@ -1,31 +1,30 @@
-# Trạng thái kiểm tra
+# Verification status
 
-## v2 — React + TypeScript và quản lý tài khoản
+## React UI and account management
 
-- Kiểm tra TypeScript UI và cú pháp JavaScript qua `npm run check`.
-- Build UI và mã extension qua `npm run build`; ZIP tạo qua `npm run pack`.
-- Ngày 15/10/2026, theo yêu cầu kiểm tra lỗi trên Brave: quan sát trang MFA thật và sửa việc chỉ đọc nội dung trong form, bỏ sót tiêu đề bên ngoài.
-- Đã build, Reload extension và chạy lại trên Brave: email → mật khẩu → tự điền/gửi mã MFA → chuyển tới trang `sign-in-with-chatgpt/codex/consent`. Không bấm Continue cấp quyền; đã dừng phiên tự động và xác nhận dữ liệu phiên tạm được xóa qua trạng thái UI.
-- Chưa kiểm tra đầy đủ thêm/sửa/xóa tài khoản trên trình duyệt hoặc mọi biến thể đăng nhập.
+- `npm run check` validates UI TypeScript and extension JavaScript syntax.
+- `npm run build` produces the extension; `npm run pack` creates the ZIP.
+- On October 15, 2026, a live Brave MFA investigation identified a field-detection issue: relevant text appeared outside the form. The selector was updated accordingly.
+- That version was rebuilt, reloaded, and tested through email → password → MFA submission → `sign-in-with-chatgpt/codex/consent`. The consent Continue button was not clicked. The run was stopped and temporary-session cleanup was confirmed through the UI.
+- Account creation, editing, deletion, and all login variants have not been fully tested in a browser.
 
-## Kết quả trước đó của TOTP v1 (mã thuật toán giữ nguyên)
+## TOTP algorithm
 
-- SHA-1 khớp 6 bộ giá trị thời gian chuẩn RFC 6238.
-- Từ chối khóa sai định dạng, HOTP và số chữ số không hỗ trợ.
-- Lần đọc trực tiếp URL đăng nhập trả về HTTP 403, chưa xác minh toàn bộ selector trên giao diện OpenAI thật.
+- SHA-1 matched six RFC 6238 reference timestamps.
+- Malformed secrets, HOTP, and unsupported digit counts were rejected.
+- An earlier direct request to the login URL returned HTTP 403; that request did not validate live-page selectors.
 
-## Luồng 3 bước và kết thúc phiên
+## Three-step flow and completion
 
-- TypeScript/build đạt. Kiểm tra mô phỏng phần nền đạt: thứ tự email/password/code, chống gửi trùng, không hoàn tất trước khi gửi code, kết thúc và xóa dữ liệu tạm khi chuyển màn hoặc rời domain sau code.
-- Chưa chạy lại đăng nhập thật sau thay đổi luồng này; kết quả Brave ở trên thuộc phiên bản trước.
+- Simulated service-worker checks covered email/password/code ordering, duplicate-submission prevention, completion only after code submission, and temporary-data cleanup.
+- Navigation fallback was checked for cases where the page unloads before the COMPLETE message arrives.
+- Completion ends the run immediately; it does not verify whether login succeeded.
 
-## Kết thúc ngay sau Continue
+## Latest UI and delayed close
 
-- Mô phỏng phần nền đạt: chỉ hoàn tất sau tín hiệu gửi code, xóa phiên ngay, gửi yêu cầu thu gọn bảng chọn, giữ trạng thái đóng sau chuyển trang và xử lý navigation trước khi nhận COMPLETE.
-- TypeScript/build đạt. Chưa chạy lại đăng nhập thật hoặc kiểm tra trực quan animation cho thay đổi này.
-
-## Cập nhật giao diện và thời gian đóng popup
-
-- TypeScript, kiểm tra cú pháp và build thành công sau các cập nhật UI.
-- Đã kiểm tra mô phỏng: giữ trạng thái gửi OTP sau Continue, xóa phiên ngay, notice và lịch đóng dùng chung mốc 3 giây, polling không đặt lại thời gian đóng.
-- Luồng đăng nhập hiện hiển thị `Thinking…`. Chưa kiểm tra lại trên Brave cho các thay đổi UI, kéo thả và thời gian đóng mới nhất.
+- TypeScript, JavaScript syntax checks, and production builds passed after the UI changes.
+- Simulated checks covered account reordering, preserving account data, handling stale targets, and reading the latest stored accounts.
+- Notice checks covered replacement, expiration, stale timers, and polling without reviving expired messages.
+- Completion checks confirmed that the OTP status remains visible, temporary data is cleared immediately, and the notice and popup close share a three-second deadline. Duplicate polling does not restart the timer; navigation uses the remaining delay.
+- Login now displays `Thinking…`, with the ellipsis animation adapted from KyberSwap's Dots component.
+- The latest UI, drag-and-drop animations, and delayed close have not been retested in Brave. The live-browser result above applies to an earlier version.

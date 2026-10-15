@@ -1,15 +1,15 @@
 # OpenAI Login Helper
 
-Extension Manifest V3 cho Brave/Chromium với UI React + TypeScript, build bằng Vite.
+A Manifest V3 extension for Brave and Chromium that fills OpenAI login forms using accounts you save locally. Built with React, TypeScript, Vite, and dnd-kit.
 
-- Tự hiện bảng chọn tài khoản khi mở trang đăng nhập trên `auth.openai.com`.
-- Chọn tài khoản đã lưu → **Start** → tự điền email, mật khẩu, mã TOTP và bấm tiếp tục.
-- Thêm, sửa, xóa, tìm kiếm và kéo thả sắp xếp tài khoản.
-- Bảng trong trang có nút **Thêm** để tạo tài khoản ngay tại chỗ, nút thu gọn và nút **Quản lý tài khoản** ở footer mở màn hình quản lý riêng. Popup trên thanh công cụ cũng quản lý được tài khoản.
+- Open the account picker on supported OpenAI login pages.
+- Select an account and click **Start** to fill email, password, and a one-time code, then click Continue at each step.
+- Add, edit, delete, search, and drag to reorder accounts.
+- Manage accounts from the toolbar popup or the dedicated account manager.
 
-## Workflow phát triển
+## Development
 
-Cần Node.js 20.19+.
+Requires Node.js 20.19 or later.
 
 ```sh
 git clone https://github.com/neikop/openai-login-helper.git
@@ -18,50 +18,54 @@ npm ci
 npm run dev
 ```
 
-| Lệnh | Chức năng |
+| Command | Purpose |
 | --- | --- |
-| `npm run dev` | Build lần đầu, sau đó theo dõi UI và mã extension, cập nhật `dist/` |
-| `npm run typecheck` | Kiểm tra TypeScript của UI |
-| `npm run check` | TypeScript và cú pháp JavaScript của extension |
-| `npm run build` | Kiểm tra và build bản dùng được vào `dist/` |
-| `npm run pack` | Build rồi tạo `artifacts/openai-login-helper-2.0.0.zip` |
+| `npm run dev` | Build once, then watch source files and update `dist/` |
+| `npm run typecheck` | Check UI TypeScript |
+| `npm run check` | Check TypeScript and extension JavaScript syntax |
+| `npm run build` | Validate and build the extension into `dist/` |
+| `npm run pack` | Build and create `artifacts/openai-login-helper-2.0.0.zip` |
 
-`dev` build file để trình duyệt nạp; không chạy web server/HMR. Sau khi sửa, bấm **Reload** extension rồi tải lại tab đăng nhập. Nếu thêm dependency, chạy lại `npm install`. Dùng `npm ci` khi cài theo lockfile trên máy mới.
+The development watcher writes extension files; it does not run a web server or HMR. After changes, reload the extension and refresh the login page. Run `npm install` when adding dependencies; use `npm ci` to install the lockfile on another machine.
 
-## Cài hoặc cập nhật extension
+## Install or update
 
-1. Chạy `npm run build`.
-2. Mở `brave://extensions` hoặc `chrome://extensions`, bật **Developer mode**.
-3. **Load unpacked** → chọn `dist/` trong thư mục repo.
-4. Nếu đang dùng bản v1 nạp từ thư mục gốc, gỡ bản đó rồi nạp `dist/`. Những lần sau chỉ cần Reload.
-5. Ghim biểu tượng extension. Mở popup để **Thêm** tài khoản.
-6. Vào `https://auth.openai.com/log-in`: bảng chọn tự hiện ở góc phải. Chọn tài khoản → **Start**.
+1. Run `npm run build`.
+2. Open `brave://extensions` or `chrome://extensions` and enable **Developer mode**.
+3. Click **Load unpacked** and select the repository's `dist/` directory.
+4. Pin the extension, open its popup, and add an account.
+5. Visit `https://auth.openai.com/log-in`, select an account, and click **Start**.
 
-Nếu dùng file ZIP, giải nén và Load unpacked thư mục `openai-login-helper` bên trong ZIP; không cần npm.
+For subsequent updates, reload the extension and refresh the login page. If using a packaged ZIP, extract it and load the `openai-login-helper` directory inside; npm is not required.
 
-Start chỉ bật khi tab đang chọn là `https://auth.openai.com/log-in` hoặc `https://auth.openai.com/log-in-or-create-account` và extension nhận diện được form nhập email. Ở trang khác, bước mật khẩu/MFA hoặc trang quản lý tài khoản, Start bị khóa; extension không tự mở tab đăng nhập mới. Mỗi lần chọn tài khoản bắt đầu từ bước email để tránh điền mật khẩu vào phiên của tài khoản khác. Nếu bảng không xuất hiện, dùng popup trên thanh công cụ.
+Start is available only when the active tab is on `https://auth.openai.com/log-in` or `https://auth.openai.com/log-in-or-create-account` and the extension detects the email form. Each run begins at the email step. The extension does not open a login tab automatically. If the embedded picker is unavailable, use the toolbar popup.
 
-## Nhập tài khoản
+## Account entry
 
-Form có các ô Email, Mật khẩu, Key MFA và Tên gợi nhớ (tùy chọn). Dán cả tài khoản vào ô Email, phân cách bằng dấu cách, tab hoặc xuống dòng để tự điền. Email, mật khẩu và key MFA là bắt buộc; chỉ tên gợi nhớ là tùy chọn. Space hoặc Enter ở ô Email/Mật khẩu chuyển sang ô tiếp theo. Bấm **Lưu tài khoản** sau khi kiểm tra thông tin.
+Email, password, and the MFA secret key are required; the account label is optional. Paste space-, tab-, or newline-separated credentials into the Email field to populate the fields. Press Space or Enter in Email or Password to move to the next field, then save the account.
 
-## Dữ liệu và cách chạy
+The MFA field accepts a Base32 TOTP secret or an `otpauth://totp` URL, not a six-digit code. The current interface uses Vietnamese labels and displays **Thinking…** during login.
 
-- Tài khoản được lưu lâu dài trong `chrome.storage.local` của profile trình duyệt, không đồng bộ đám mây. Mật khẩu và khóa 2FA chưa được mã hóa bằng mật khẩu riêng. Xóa trong UI hoặc gỡ extension sẽ xóa bản lưu trong extension.
-- Content script không được truy cập trực tiếp kho tài khoản. Bảng nhúng thuộc origin của extension, trang OpenAI không đọc được nội dung bên trong. Chỉ đưa email, mật khẩu hoặc mã TOTP cần thiết vào form khi bạn bấm Start; không đưa khóa 2FA vào trang.
-- Một phiên tự động chạy tại một thời điểm, trên đúng tab đã chọn. Dữ liệu phiên tạm được xóa khi Dừng, đóng tab, rời tên miền xác thực, gặp lỗi hoặc hết 5 phút; danh sách tài khoản đã lưu vẫn còn.
-- Sửa hoặc xóa tài khoản đang chạy sẽ dừng phiên để không tiếp tục dùng dữ liệu cũ.
-- Mỗi bước gửi tối đa một lần. Dừng không thu hồi yêu cầu đã gửi. Không tự thử lại mật khẩu/mã sai.
-- CAPTCHA, mã email/SMS, passkey và đăng nhập Google/Apple/Microsoft cần thao tác thủ công. Mã TOTP được tạo ngay trên máy; đồng hồ máy cần đúng giờ.
-- Luồng gồm đúng Email → Password → One-time code; mỗi bước chỉ bấm Continue. Ngay sau khi bấm Continue ở bước One-time code, phiên tự kết thúc, xóa dữ liệu tạm và giữ trạng thái **Thinking…** thêm 3 giây trước khi đóng bảng chọn/popup. Không chờ phản hồi hoặc màn tiếp theo. Không tự bấm ở màn tiếp theo. Kết thúc tự điền không khẳng định ứng dụng đích đã đăng nhập xong.
+## Storage and login behavior
 
-## Source
+- Accounts are stored in `chrome.storage.local` in your browser profile, without cloud sync. Passwords and MFA secrets are not encrypted with a separate vault password. Delete an account in the UI or uninstall the extension to remove its stored copy.
+- Content scripts cannot read the account store directly. The embedded picker uses the extension's origin. Only the required email, password, or generated code is sent to the form after you click Start; the MFA secret is never inserted into the page.
+- One run operates at a time, on the selected tab. Temporary session data is cleared when you stop, close the tab, leave the authentication domain, encounter an error, or reach the five-minute timeout. Saved accounts remain available.
+- Editing or deleting the active account stops its run. Each step is submitted at most once; stopping does not undo an already submitted request.
+- CAPTCHA, email/SMS codes, passkeys, and social login require manual interaction. TOTP generation is local and requires an accurate system clock.
+- The flow is Email → Password → One-time code, clicking only Continue. After the final Continue click, the run ends and temporary data is cleared immediately. The popup keeps **Thinking…** visible for three seconds before closing. The extension does not wait for a success response or interact with subsequent account-selection or consent screens. Finishing autofill does not confirm a successful login.
+- Notices replace previous notices and expire after three seconds.
 
-- `src/ui/`: giao diện React + TypeScript dùng chung cho popup, bảng chọn và trang quản lý.
-- `src/extension/`: service worker, lưu tài khoản, điền form và TOTP.
-- `public/manifest.json`: quyền và cấu hình extension.
-- `scripts/`: build phần nền/content script, watch và đóng gói ZIP.
+## Project layout
 
-Đã kiểm tra TypeScript/build và xác minh trên Brave luồng email → mật khẩu → MFA tự động chuyển tới màn cấp quyền Codex. Chưa bấm Continue cấp quyền, chưa kiểm tra đầy đủ thêm/sửa/xóa tài khoản hoặc mọi biến thể đăng nhập. Xem `VERIFICATION.md`. Giao diện OpenAI có thể thay đổi nên selector có thể cần điều chỉnh từ màn hình thực tế.
+- `src/ui/`: shared React UI for the popup, embedded picker, and account manager.
+- `src/extension/`: service worker, account storage, form detection, and TOTP generation.
+- `src/shared/`: shared timing configuration.
+- `public/manifest.json`: extension permissions and configuration.
+- `scripts/`: extension build, watch, and ZIP packaging.
 
-Tiện ích độc lập, không liên kết với OpenAI.
+## Verification
+
+TypeScript, syntax checks, and production builds pass. An earlier version was tested on Brave through email, password, and MFA to the Codex consent screen. The latest UI, drag-and-drop, and delayed-close changes have not been retested in a live browser. See [VERIFICATION.md](VERIFICATION.md) for details. OpenAI page changes may require selector updates.
+
+Independent project, not affiliated with OpenAI.
